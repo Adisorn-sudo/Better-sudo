@@ -1,11 +1,7 @@
-#include <android/log.h>
-#include <pthread.h>
-#include <unistd.h>
 #include <cstdint>
 #include <cstring>
 #include <sys/mman.h>
 
-#include "pl/Hook.h"
 #include "pl/Gloss.h"
 #include "pl/Signature.h"
 
@@ -15,12 +11,7 @@ static const char* GFX_GAMMA_SIGNATURE =
     "01 E4 00 2F 00 10 2C 1E 68 50 A7 72 02 10 2E 1E";
 
 constexpr uint32_t MOV_W8_10 = 0x52800148;
-constexpr uint32_t SCVTF_S0_W8 = 0x1E220100;
-constexpr uint32_t SCVTF_S1_W8 = 0x1E220101;
 constexpr uint32_t SCVTF_S2_W8 = 0x1E220102;
-
-constexpr uint32_t MOVI_D1_0 = 0x2F00E401;
-constexpr uint32_t FMOV_S0_0_5 = 0x1E2C1000;
 constexpr uint32_t FMOV_S2_1_0 = 0x1E2E1002;
 
 static bool PatchMemory(void* addr, const void* data, size_t size) {
@@ -45,26 +36,18 @@ static bool PatchGfxGamma() {
     }
     
     uint8_t* base = (uint8_t*)addr;
-    
-    uint32_t* min_addr = (uint32_t*)(base + 32);
-    uint32_t* default_addr = (uint32_t*)(base + 36);
-    uint32_t* movk_addr = (uint32_t*)(base + 40);
     uint32_t* max_addr = (uint32_t*)(base + 44);
     
+    if (*max_addr != FMOV_S2_1_0) {
+        return false;
+    }
+    
+    uint32_t* movk_addr = (uint32_t*)(base + 40);
+    
     uint32_t mov_instr = MOV_W8_10;
-    uint32_t scvtf_s0 = SCVTF_S0_W8;
-    uint32_t scvtf_s1 = SCVTF_S1_W8;
     uint32_t scvtf_s2 = SCVTF_S2_W8;
     
-    if (!PatchMemory(min_addr, &mov_instr, sizeof(mov_instr))) {
-        return false;
-    }
-    
-    if (!PatchMemory(default_addr, &scvtf_s0, sizeof(scvtf_s0))) {
-        return false;
-    }
-    
-    if (!PatchMemory(movk_addr, &scvtf_s1, sizeof(scvtf_s1))) {
+    if (!PatchMemory(movk_addr, &mov_instr, sizeof(mov_instr))) {
         return false;
     }
     

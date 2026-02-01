@@ -29,5 +29,5 @@ jobs:
         
     - uses: actions/upload-artifact@v4
       with:
-        name: libBetterBrightness
-        path: build/libBetterBrightness.so
+        name: libBetterSudo
+        path: build/libBetterSudo.so

@@ -24,6 +24,14 @@ void onLoad() {
 
     struct dirent* ent;
     while ((ent = readdir(dir)) != nullptr) {
+
         __android_log_print(
             ANDROID_LOG_INFO,
-            TAG
+            TAG,
+            "Found: %s",
+            ent->d_name
+        );
+    }
+
+    closedir(dir);
+}

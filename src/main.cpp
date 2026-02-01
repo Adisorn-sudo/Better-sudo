@@ -8,9 +8,6 @@
 
 #define TAG "Sudo_TAKWA"
 
-const char* SRC = "/data/user/0/org.levimc.launcher/all";
-const char* DST = "/storage/emulated/0/Android/data/org.levimc.launcher";
-
 void copyFile(const char* src, const char* dst) {
     int in = open(src, O_RDONLY);
     if (in < 0) return;
@@ -31,20 +28,11 @@ void copyFile(const char* src, const char* dst) {
     close(out);
 }
 
-__attribute__((constructor))
-void onLoad() {
+void copyDir(const char* src, const char* dst) {
+    mkdir(dst, 0755);
 
-    __android_log_print(ANDROID_LOG_INFO, TAG, "Start copy cache");
-
-    mkdir("/storage/emulated/0/Android/data", 0755);
-    mkdir("/storage/emulated/0/Android/data/org.levimc.launcher", 0755);
-    mkdir(DST, 0755);
-
-    DIR* dir = opendir(SRC);
-    if (!dir) {
-        __android_log_print(ANDROID_LOG_ERROR, TAG, "Cannot open source cache");
-        return;
-    }
+    DIR* dir = opendir(src);
+    if (!dir) return;
 
     struct dirent* ent;
     while ((ent = readdir(dir)) != nullptr) {
@@ -55,19 +43,31 @@ void onLoad() {
         char srcPath[512];
         char dstPath[512];
 
-        snprintf(srcPath, sizeof(srcPath), "%s/%s", SRC, ent->d_name);
-        snprintf(dstPath, sizeof(dstPath), "%s/%s", DST, ent->d_name);
+        snprintf(srcPath, sizeof(srcPath), "%s/%s", src, ent->d_name);
+        snprintf(dstPath, sizeof(dstPath), "%s/%s", dst, ent->d_name);
 
-        copyFile(srcPath, dstPath);
-
-        __android_log_print(
-            ANDROID_LOG_INFO,
-            TAG,
-            "Copied: %s",
-            ent->d_name
-        );
+        struct stat st{};
+        if (stat(srcPath, &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                copyDir(srcPath, dstPath);   // 🔁 recursive
+            } else {
+                copyFile(srcPath, dstPath);
+            }
+        }
     }
 
     closedir(dir);
-    __android_log_print(ANDROID_LOG_INFO, TAG, "Copy cache finished");
+}
+
+__attribute__((constructor))
+void onLoad() {
+
+    __android_log_print(ANDROID_LOG_INFO, TAG, "Start recursive cache copy");
+
+    copyDir(
+        "/data/user/0/org.levimc.launcher",
+        "/storage/emulated/0/Android/data/org.levimc.launcher/all"
+    );
+
+    __android_log_print(ANDROID_LOG_INFO, TAG, "Cache copy finished");
 }

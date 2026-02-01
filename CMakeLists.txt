@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(BetterBrightness LANGUAGES C CXX)
+project(BetterSudo LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -39,5 +39,5 @@ target_link_libraries(preloader PUBLIC fmt::fmt)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
-add_library(BetterBrightness SHARED src/main.cpp)
-target_link_libraries(BetterBrightness preloader log)
+add_library(BetterSudo SHARED src/main.cpp)
+target_link_libraries(BetterSudo preloader log)

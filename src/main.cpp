@@ -2,7 +2,7 @@
 #include <android/log.h>
 #include <dirent.h>
 
-#define TAG "LEVI_CHECK"
+#define TAG "SUDO_TAKWA"
 
 extern "C"
 JNIEXPORT void JNICALL

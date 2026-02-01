@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
+#include <cstdio>
 
 #define TAG "Sudo_TAKWA"
 

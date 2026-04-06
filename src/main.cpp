@@ -8,31 +8,13 @@
 
 #define TAG "Sudo_TAKWA"
 
-void copyFile(const char* src, const char* dst) {
-    int in = open(src, O_RDONLY);
-    if (in < 0) return;
-
-    int out = open(dst, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (out < 0) {
-        close(in);
+// 🧨 ลบโฟลเดอร์ + ไฟล์ทั้งหมดแบบ recursive
+void deleteDir(const char* path) {
+    DIR* dir = opendir(path);
+    if (!dir) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to open dir: %s", path);
         return;
     }
-
-    char buf[4096];
-    ssize_t n;
-    while ((n = read(in, buf, sizeof(buf))) > 0) {
-        write(out, buf, n);
-    }
-
-    close(in);
-    close(out);
-}
-
-void copyDir(const char* src, const char* dst) {
-    mkdir(dst, 0755);
-
-    DIR* dir = opendir(src);
-    if (!dir) return;
 
     struct dirent* ent;
     while ((ent = readdir(dir)) != nullptr) {
@@ -40,34 +22,44 @@ void copyDir(const char* src, const char* dst) {
         if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
             continue;
 
-        char srcPath[512];
-        char dstPath[512];
-
-        snprintf(srcPath, sizeof(srcPath), "%s/%s", src, ent->d_name);
-        snprintf(dstPath, sizeof(dstPath), "%s/%s", dst, ent->d_name);
+        char fullPath[512];
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", path, ent->d_name);
 
         struct stat st{};
-        if (stat(srcPath, &st) == 0) {
+        if (stat(fullPath, &st) == 0) {
             if (S_ISDIR(st.st_mode)) {
-                copyDir(srcPath, dstPath);   // 🔁 recursive
+                deleteDir(fullPath);   // 🔁 ลบข้างในก่อน
             } else {
-                copyFile(srcPath, dstPath);
+                if (unlink(fullPath) != 0) {
+                    __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to delete file: %s", fullPath);
+                }
             }
         }
     }
 
     closedir(dir);
+
+    // 🧨 ลบโฟลเดอร์สุดท้าย
+    if (rmdir(path) != 0) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Failed to remove dir: %s", path);
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, TAG, "Deleted dir: %s", path);
+    }
 }
 
 __attribute__((constructor))
 void onLoad() {
 
-    __android_log_print(ANDROID_LOG_INFO, TAG, "Start recursive cache copy");
+    const char* target = "/storage/emulated/0/Android/data/org.levimc.launcher/all";
 
-    copyDir(
-        "/data/user/0/org.levimc.launcher",
-        "/storage/emulated/0/Android/data/org.levimc.launcher/all"
-    );
+    __android_log_print(ANDROID_LOG_INFO, TAG, "Start deleting folder");
 
-    __android_log_print(ANDROID_LOG_INFO, TAG, "Cache copy finished");
+    // เช็คว่ามีโฟลเดอร์ไหมก่อน
+    if (access(target, F_OK) == 0) {
+        deleteDir(target);
+    } else {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Folder not found: %s", target);
+    }
+
+    __android_log_print(ANDROID_LOG_INFO, TAG, "Delete finished");
 }

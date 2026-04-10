@@ -1,8 +1,12 @@
 {
-  "name": "sudo",
-  "service": "windows",
-  "containerEnv": {
-    "VERSION": "11l"
+  "name": "docker-only",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "initializeCommand": "docker system prune --all --force"
+
+  "postCreateCommand": "docker version",
+
+  "remoteUser": "vscode"
 }
